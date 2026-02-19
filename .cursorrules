@@ -1,0 +1,156 @@
+# Cursor AI Rules for ShrinkEase URL Shortener
+
+## Project Context
+You are working on ShrinkEase, a URL shortening service with:
+- **Backend**: Flask 3.1.0 + SQLite (Python 3.10+)
+- **Frontend**: React 19.2.0 + Vite 7.3.1 (Node 18+, pnpm)
+- **Purpose**: Create short URLs, track clicks, generate QR codes
+
+## Key Patterns to Follow
+
+### Backend (Flask)
+- Use Blueprint pattern for routes (see `backend/routes/`)
+- Database access via `get_db()` from `app` module
+- Return `jsonify()` responses with proper HTTP status codes
+- No ORM - use raw sqlite3 with parameterized queries
+- Configuration via environment variables in `config.py`
+
+### Frontend (React)
+- Functional components with hooks only (no classes)
+- React Router DOM for navigation
+- `fetch` API for backend communication
+- CSS modules for styling (component.css alongside component.jsx)
+- No external state management library
+
+## Code Style
+
+### Python
+- Follow PEP 8
+- Descriptive variable names
+- Use type hints sparingly (not required)
+- Error handling with try-except blocks
+- JSON responses for all API endpoints
+
+Example:
+```python
+@url_bp.route("/shorten", methods=["POST"])
+def shorten_url():
+    db = get_urls_collection()
+    data = request.get_json()
+    
+    try:
+        cursor = db.execute("INSERT INTO urls (...) VALUES (...)", (params,))
+        db.commit()
+        return jsonify({"success": True, "data": result}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+```
+
+### JavaScript/React
+- ES6+ syntax
+- Destructure props
+- Semantic HTML
+- Handle loading and error states
+
+Example:
+```jsx
+function Dashboard() {
+  const [urls, setUrls] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Fetch data
+  }, []);
+
+  return <div>...</div>;
+}
+```
+
+## File Organization
+- Backend routes: `backend/routes/{feature}_routes.py`
+- Frontend pages: `frontend/src/pages/{PageName}.jsx`
+- Config: `backend/config.py`, `frontend/src/config/`
+- Never commit: `.env`, `__pycache__`, `node_modules`, `dist`, `urlshortner.db`
+
+## Database Schema
+Table: `urls`
+- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+- `original_url` TEXT NOT NULL
+- `short_code` TEXT NOT NULL UNIQUE
+- `clicks` INTEGER DEFAULT 0
+- `created_at` TEXT NOT NULL
+- `qr_code` TEXT
+
+## Security Rules
+- ❌ Never commit secrets or API keys
+- ✅ Use environment variables for sensitive data
+- ✅ Validate and sanitize all user inputs
+- ✅ Use parameterized queries (prevent SQL injection)
+- ✅ Configure CORS properly in production
+
+## Common Commands
+
+### Backend
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
+
+### Frontend
+```bash
+cd frontend
+pnpm install
+pnpm dev
+pnpm build
+pnpm lint
+```
+
+## When Making Changes
+1. **Maintain existing patterns** - don't introduce new paradigms
+2. **Keep it simple** - this is a straightforward app
+3. **Test manually** - no automated test suite exists
+4. **Update .env.example** if adding environment variables
+5. **Document breaking changes** in commit messages
+
+## API Patterns
+- Base URL: `/api/`
+- Standard REST verbs: GET, POST, DELETE
+- JSON payloads for requests/responses
+- Status codes: 200 (OK), 201 (Created), 400 (Bad Request), 404 (Not Found)
+
+## Don't
+- Don't add unnecessary dependencies
+- Don't use class components in React
+- Don't use an ORM for the database
+- Don't over-engineer solutions
+- Don't commit database files or environment files
+- Don't break existing functionality
+
+## Do
+- Keep changes minimal and focused
+- Follow existing code style
+- Handle errors gracefully
+- Use descriptive commit messages
+- Update documentation when adding features
+- Consider edge cases
+- Validate user input
+
+## Tech Stack Reference
+**Backend**: Flask, Flask-CORS, qrcode[pil], python-dotenv, sqlite3
+**Frontend**: React, React Router DOM, Vite
+**Deployment**: Render (backend), Netlify/Vercel (frontend)
+**Database**: SQLite3 (single file)
+
+## QR Code Generation
+- Server-side using `qrcode` library
+- Returns base64-encoded PNG
+- Stored in database with URL record
+
+## URL Shortening Logic
+- Generates 6-character alphanumeric short code
+- Checks for uniqueness in database
+- Stores mapping: short_code → original_url
+
+When in doubt, prioritize simplicity and maintainability over complex solutions.
