@@ -16,6 +16,8 @@ CORS(
     resources={r"/api/*": {"origins": CORS_ALLOWED_ORIGINS}},
 )
 
+print(f"Configured CORS_ALLOWED_ORIGINS={CORS_ALLOWED_ORIGINS}")
+
 
 def get_db():
     if "db" not in g:

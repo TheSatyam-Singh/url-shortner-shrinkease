@@ -36,7 +36,15 @@ The API listens on `http://localhost:4000` by default. Use `PORT` env var to ove
 - `SECRET_KEY` — Flask secret key (default in `.env.example`).
 - `DB_PATH` — path to the SQLite file (default: `./urlshortner.db`).
 - `BASE_URL` — optional; force the public base URL used when returning short URLs.
-- `CORS_ALLOWED_ORIGINS` — comma-separated origins or `*`.
+- `CORS_ALLOWED_ORIGINS` — comma-separated origins or `*`. You can provide origins with or without scheme — e.g. `https://app.vercel.app` **or** `app.vercel.app`. Example for a Vercel frontend:
+
+  `CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app`
+
+  or
+
+  `CORS_ALLOWED_ORIGINS=your-frontend.vercel.app`
+
+  (the server will normalize hosts without a scheme).
 - `FLASK_DEBUG` — `true`/`false`.
 - `PORT` — port number (Render/hosting platforms provide this).
 
