@@ -20,7 +20,6 @@ function Dashboard() {
         setUrls(data)
       }
     } catch {
-      // ignore
     }
   }, [])
 
@@ -68,7 +67,6 @@ function Dashboard() {
         }
       }
     } catch {
-      // ignore
     }
   }
 

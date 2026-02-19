@@ -1,54 +1,57 @@
-# ShrinkEase - Backend
+# ShrinkEase — Backend (Flask)
 
-Flask API for the URL shortener service.
+Lightweight Flask API that stores short links in a local SQLite database.
 
-## Setup
+## Quick start (local)
+
+Requirements:
+- Python 3.10+
+- pip
+
+Install:
 
 ```bash
 cd backend
+python -m venv .venv     # optional but recommended
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Configuration
-
-Create a `.env` file (optional):
+Create local env file (copy example):
 
 ```bash
 cp .env.example .env
+# edit .env if you want to change SECRET_KEY, DB_PATH, BASE_URL, etc.
 ```
 
-Then edit values:
-
-```
-SECRET_KEY=your-secret-key
-DB_PATH=./urlshortner.db
-# Optional. Leave empty to auto-detect host from request
-BASE_URL=
-# Use * in local dev, restrict in production
-CORS_ALLOWED_ORIGINS=http://localhost:5173
-FLASK_DEBUG=true
-PORT=4000
-```
-
-## Run
+Run:
 
 ```bash
 python app.py
 ```
 
-The server starts on `http://localhost:4000` by default.
-On Hugging Face, `PORT` is provided by the platform.
+The API listens on `http://localhost:4000` by default. Use `PORT` env var to override.
 
-## API Routes
+## Environment variables
+- `SECRET_KEY` — Flask secret key (default in `.env.example`).
+- `DB_PATH` — path to the SQLite file (default: `./urlshortner.db`).
+- `BASE_URL` — optional; force the public base URL used when returning short URLs.
+- `CORS_ALLOWED_ORIGINS` — comma-separated origins or `*`.
+- `FLASK_DEBUG` — `true`/`false`.
+- `PORT` — port number (Render/hosting platforms provide this).
 
-### URLs
-- `POST /api/shorten` — Shorten a URL
-- `GET /api/urls` — List all URLs
-- `DELETE /api/urls/<id>` — Delete a URL
-- `GET /api/urls/<id>/stats` — Get URL stats
+## API endpoints
+- POST `/api/shorten` — body: `{ "url": "https://...", "custom_code": "opt" }`
+- GET `/api/urls` — list all short URLs
+- DELETE `/api/urls/<id>` — delete a URL
+- GET `/<short_code>` — redirect to original URL (302)
+- GET `/api/health` — health check
 
-### Redirect
-- `GET /<short_code>` — Redirect to the original URL
+## Deploy (Render)
+1. Point Render to the `backend/` folder in your repo.
+2. Render will run `pip install -r requirements.txt` and start `python app.py`.
+3. Set environment variables on Render dashboard (SECRET_KEY, CORS_ALLOWED_ORIGINS, BASE_URL if needed).
 
-### Health
-- `GET /api/health` — Health check
+## Notes
+- `urlshortner.db` is a local SQLite DB file (safe to remove from repo). The app will create the DB schema on first run.
+- For production use a managed database or persistent storage.

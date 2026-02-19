@@ -1,34 +1,47 @@
-from flask import Blueprint, redirect
+from flask import Blueprint, request, redirect, jsonify
+from datetime import datetime
 import sqlite3
 
 redirect_bp = Blueprint("redirect", __name__)
 
 
-@redirect_bp.route("/<short_code>")
-def redirect_url(short_code):
-    from app import get_db
+def get_db():
+    # import here to avoid circular import when blueprint is loaded by app
+    from app import get_db as _get_db
 
+    return _get_db()
+
+
+@redirect_bp.route("/<short_code>", methods=["GET"])
+def handle_redirect(short_code):
     db = get_db()
 
     try:
         row = db.execute(
             "SELECT id, original_url FROM urls WHERE short_code = ?",
             (short_code,),
-        )
-        url_doc = row.fetchone()
+        ).fetchone()
     except sqlite3.Error:
-        return "Database connection failed", 503
+        return jsonify({"error": "Database connection failed"}), 503
 
-    if not url_doc:
-        return "URL not found", 404
+    if not row:
+        return jsonify({"error": "Short URL not found"}), 404
 
+    # increment clicks
     try:
         db.execute(
             "UPDATE urls SET clicks = clicks + 1 WHERE id = ?",
-            (url_doc["id"],),
+            (row["id"],),
         )
         db.commit()
     except sqlite3.Error:
-        return "Database connection failed", 503
+        # non-fatal for redirect — still redirect even if counter failed
+        pass
 
-    return redirect(url_doc["original_url"])
+    original = row["original_url"]
+
+    # Ensure URL has a scheme (should already be normalized on insert)
+    if not original.startswith(("http://", "https://")):
+        original = "https://" + original
+
+    return redirect(original, code=302)

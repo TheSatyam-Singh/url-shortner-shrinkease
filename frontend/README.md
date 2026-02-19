@@ -20,7 +20,7 @@ cp .env.example .env
 Configure the backend API URL:
 
 ```
-VITE_API_BASE_URL=https://satyam-singh-url-shortner-backend.hf.space
+VITE_API_BASE_URL=https://url-shortner-shrinkease.onrender.com
 ```
 
 For local development, you can set it to:
@@ -42,3 +42,10 @@ Runs on `http://localhost:5173` and connects to the backend URL specified in `.e
 ```bash
 pnpm build
 ```
+\
+
+
+
+curl -X POST "https://url-shortner-shrinkease.onrender.com/api/shorten" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com"}'
