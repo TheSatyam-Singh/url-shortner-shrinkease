@@ -13,7 +13,10 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 CORS(
     app,
-    resources={r"/api/*": {"origins": CORS_ALLOWED_ORIGINS}},
+    resources={r"/*": {"origins": CORS_ALLOWED_ORIGINS}},
+    supports_credentials=False,
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "HEAD", "POST", "OPTIONS", "PUT", "DELETE"],
 )
 
 print(f"Configured CORS_ALLOWED_ORIGINS={CORS_ALLOWED_ORIGINS}")

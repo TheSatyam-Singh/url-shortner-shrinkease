@@ -17,17 +17,23 @@ Create a `.env` file in the frontend directory (or copy from `.env.example`):
 cp .env.example .env
 ```
 
-Configure the backend API URL:
+Configure the backend API URL locally or for production:
 
 ```
+# Production (Render backend)
 VITE_API_BASE_URL=https://url-shortner-shrinkease.onrender.com
-```
 
-For local development, you can set it to:
-
-```
+# Local development
 VITE_API_BASE_URL=http://localhost:4000
 ```
+
+If deploying the frontend to Vercel, set the **VITE_API_BASE_URL** environment variable in the Vercel dashboard. Also ensure the backend's `CORS_ALLOWED_ORIGINS` includes your Vercel origin (for example: `your-app.vercel.app` or `https://your-app.vercel.app`).
+
+Example steps on Vercel:
+1. Project → Settings → Environment Variables → add `VITE_API_BASE_URL` = `https://url-shortner-shrinkease.onrender.com`
+2. Redeploy the Vercel site.
+
+On the backend (Render) make sure `CORS_ALLOWED_ORIGINS` includes the Vercel origin (or use `*` for quick testing).
 
 ## Development
 
