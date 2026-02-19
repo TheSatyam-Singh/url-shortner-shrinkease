@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
+import { API_ENDPOINTS } from '../config/api'
 
-const API = '/api'
+const API = API_ENDPOINTS.api
 
 function Dashboard({ token, username, onLogout }) {
   const [url, setUrl] = useState('')
