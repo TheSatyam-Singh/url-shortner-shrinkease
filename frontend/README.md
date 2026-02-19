@@ -6,7 +6,7 @@ React app for the URL shortener.
 
 ```bash
 cd frontend
-npm install
+pnpm install
 ```
 
 ## Environment Configuration
@@ -26,13 +26,13 @@ VITE_API_BASE_URL=https://satyam-singh-url-shortner-backend.hf.space
 For local development, you can set it to:
 
 ```
-VITE_API_BASE_URL=http://localhost:5000
+VITE_API_BASE_URL=http://localhost:4000
 ```
 
 ## Development
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Runs on `http://localhost:5173` and connects to the backend URL specified in `.env`.
@@ -40,5 +40,5 @@ Runs on `http://localhost:5173` and connects to the backend URL specified in `.e
 ## Build
 
 ```bash
-npm run build
+pnpm build
 ```

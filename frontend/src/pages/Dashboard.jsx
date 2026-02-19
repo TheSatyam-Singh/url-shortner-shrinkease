@@ -3,22 +3,17 @@ import { API_ENDPOINTS } from '../config/api'
 
 const API = API_ENDPOINTS.api
 
-function Dashboard({ token, username, onLogout }) {
+function Dashboard() {
   const [url, setUrl] = useState('')
   const [customCode, setCustomCode] = useState('')
   const [result, setResult] = useState(null)
   const [urls, setUrls] = useState([])
   const [error, setError] = useState('')
 
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-  }
-
   const fetchUrls = useCallback(async () => {
     try {
       const res = await fetch(`${API}/urls`, {
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
       })
       if (res.ok) {
         const data = await res.json()
@@ -27,7 +22,7 @@ function Dashboard({ token, username, onLogout }) {
     } catch {
       // ignore
     }
-  }, [token])
+  }, [])
 
   useEffect(() => {
     fetchUrls()
@@ -45,7 +40,7 @@ function Dashboard({ token, username, onLogout }) {
 
       const res = await fetch(`${API}/shorten`, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
       const data = await res.json()
@@ -64,7 +59,7 @@ function Dashboard({ token, username, onLogout }) {
 
   const handleDelete = async (id) => {
     try {
-      await fetch(`${API}/urls/${id}`, { method: 'DELETE', headers })
+      await fetch(`${API}/urls/${id}`, { method: 'DELETE' })
       fetchUrls()
       if (result && result.short_code) {
         const deleted = urls.find((u) => u.id === id)
@@ -81,10 +76,7 @@ function Dashboard({ token, username, onLogout }) {
     <>
       <nav className="navbar">
         <h2>ShrinkEase</h2>
-        <div>
-          <span style={{ fontSize: 13, marginRight: 10, color: '#666' }}>{username}</span>
-          <button onClick={onLogout}>Logout</button>
-        </div>
+        <div />
       </nav>
 
       <div className="shorten-form">

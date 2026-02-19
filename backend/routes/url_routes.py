@@ -2,15 +2,26 @@ import string
 import random
 import io
 import base64
+import sqlite3
 from datetime import datetime, timezone
 
 import qrcode
-from flask import Blueprint, request, jsonify, g
-from bson.objectid import ObjectId
-from auth import token_required
+from flask import Blueprint, request, jsonify
 from config import BASE_URL
 
 url_bp = Blueprint("url", __name__)
+
+
+def get_public_base_url():
+    if BASE_URL and BASE_URL.strip():
+        return BASE_URL.rstrip("/")
+    return request.url_root.rstrip("/")
+
+
+def get_urls_collection():
+    from app import get_db
+
+    return get_db()
 
 
 def generate_short_code(length=6):
@@ -35,9 +46,8 @@ def make_qr_base64(url):
 
 
 @url_bp.route("/shorten", methods=["POST"])
-@token_required
 def shorten_url():
-    from app import mongo
+    db = get_urls_collection()
 
     data = request.get_json()
     original_url = data.get("url", "").strip() if data else ""
@@ -49,28 +59,46 @@ def shorten_url():
     if not original_url.startswith(("http://", "https://")):
         original_url = "https://" + original_url
 
-    if custom_code:
-        if mongo.db.urls.find_one({"short_code": custom_code}):
-            return jsonify({"error": "Custom code already taken"}), 409
-        short_code = custom_code
-    else:
-        short_code = generate_short_code()
-        while mongo.db.urls.find_one({"short_code": short_code}):
+    try:
+        if custom_code:
+            existing = db.execute(
+                "SELECT id FROM urls WHERE short_code = ?",
+                (custom_code,),
+            ).fetchone()
+            if existing:
+                return jsonify({"error": "Custom code already taken"}), 409
+            short_code = custom_code
+        else:
             short_code = generate_short_code()
+            while db.execute(
+                "SELECT id FROM urls WHERE short_code = ?",
+                (short_code,),
+            ).fetchone():
+                short_code = generate_short_code()
+    except sqlite3.Error:
+        return jsonify({"error": "Database connection failed"}), 503
 
-    short_url = f"{BASE_URL}/{short_code}"
+    public_base_url = get_public_base_url()
+    short_url = f"{public_base_url}/{short_code}"
     qr_data = make_qr_base64(short_url)
 
-    mongo.db.urls.insert_one(
-        {
-            "original_url": original_url,
-            "short_code": short_code,
-            "user_id": g.user_id,
-            "clicks": 0,
-            "created_at": datetime.now(timezone.utc),
-            "qr_code": qr_data,
-        }
-    )
+    try:
+        db.execute(
+            """
+            INSERT INTO urls (original_url, short_code, clicks, created_at, qr_code)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                original_url,
+                short_code,
+                0,
+                datetime.now(timezone.utc).isoformat(),
+                qr_data,
+            ),
+        )
+        db.commit()
+    except sqlite3.Error:
+        return jsonify({"error": "Database connection failed"}), 503
 
     return jsonify(
         {
@@ -83,62 +111,79 @@ def shorten_url():
 
 
 @url_bp.route("/urls", methods=["GET"])
-@token_required
 def get_user_urls():
-    from app import mongo
+    db = get_urls_collection()
 
-    urls = list(mongo.db.urls.find({"user_id": g.user_id}))
+    try:
+        urls = db.execute(
+            "SELECT id, original_url, short_code, clicks, created_at, qr_code FROM urls ORDER BY id DESC"
+        ).fetchall()
+    except sqlite3.Error:
+        return jsonify({"error": "Database connection failed"}), 503
+
     result = []
-    for u in urls:
+    for row in urls:
         result.append(
             {
-                "id": str(u["_id"]),
-                "original_url": u["original_url"],
-                "short_code": u["short_code"],
-                "short_url": f"{BASE_URL}/{u['short_code']}",
-                "clicks": u.get("clicks", 0),
-                "created_at": u.get("created_at", "").isoformat()
-                if u.get("created_at")
-                else "",
-                "qr_code": u.get("qr_code", ""),
+                "id": str(row["id"]),
+                "original_url": row["original_url"],
+                "short_code": row["short_code"],
+                "short_url": f"{get_public_base_url()}/{row['short_code']}",
+                "clicks": row["clicks"],
+                "created_at": row["created_at"],
+                "qr_code": row["qr_code"] or "",
             }
         )
     return jsonify(result), 200
 
 
 @url_bp.route("/urls/<url_id>", methods=["DELETE"])
-@token_required
 def delete_url(url_id):
-    from app import mongo
+    db = get_urls_collection()
 
-    result = mongo.db.urls.delete_one(
-        {"_id": ObjectId(url_id), "user_id": g.user_id}
-    )
-    if result.deleted_count == 0:
+    if not url_id.isdigit():
+        return jsonify({"error": "Invalid URL id"}), 400
+
+    try:
+        cursor = db.execute(
+            "DELETE FROM urls WHERE id = ?",
+            (int(url_id),),
+        )
+        db.commit()
+    except sqlite3.Error:
+        return jsonify({"error": "Database connection failed"}), 503
+
+    if cursor.rowcount == 0:
         return jsonify({"error": "URL not found"}), 404
     return jsonify({"message": "Deleted"}), 200
 
 
 @url_bp.route("/urls/<url_id>/stats", methods=["GET"])
-@token_required
 def url_stats(url_id):
-    from app import mongo
+    db = get_urls_collection()
 
-    url_doc = mongo.db.urls.find_one(
-        {"_id": ObjectId(url_id), "user_id": g.user_id}
-    )
+    if not url_id.isdigit():
+        return jsonify({"error": "Invalid URL id"}), 400
+
+    try:
+        row = db.execute(
+            "SELECT id, original_url, short_code, clicks, created_at FROM urls WHERE id = ?",
+            (int(url_id),),
+        )
+        url_doc = row.fetchone()
+    except sqlite3.Error:
+        return jsonify({"error": "Database connection failed"}), 503
+
     if not url_doc:
         return jsonify({"error": "URL not found"}), 404
 
     return jsonify(
         {
-            "id": str(url_doc["_id"]),
+            "id": str(url_doc["id"]),
             "original_url": url_doc["original_url"],
             "short_code": url_doc["short_code"],
-            "short_url": f"{BASE_URL}/{url_doc['short_code']}",
-            "clicks": url_doc.get("clicks", 0),
-            "created_at": url_doc.get("created_at", "").isoformat()
-            if url_doc.get("created_at")
-            else "",
+            "short_url": f"{get_public_base_url()}/{url_doc['short_code']}",
+            "clicks": url_doc["clicks"],
+            "created_at": url_doc["created_at"],
         }
     ), 200

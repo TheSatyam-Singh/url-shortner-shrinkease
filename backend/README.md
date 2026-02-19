@@ -13,11 +13,21 @@ pip install -r requirements.txt
 
 Create a `.env` file (optional):
 
+```bash
+cp .env.example .env
 ```
-MONGO_URI=mongodb://localhost:27017/urlshortner
+
+Then edit values:
+
+```
 SECRET_KEY=your-secret-key
-BASE_URL=http://localhost:5000
+DB_PATH=./urlshortner.db
+# Optional. Leave empty to auto-detect host from request
+BASE_URL=
+# Use * in local dev, restrict in production
+CORS_ALLOWED_ORIGINS=http://localhost:5173
 FLASK_DEBUG=true
+PORT=4000
 ```
 
 ## Run
@@ -26,17 +36,14 @@ FLASK_DEBUG=true
 python app.py
 ```
 
-The server starts on `http://localhost:5000`.
+The server starts on `http://localhost:4000` by default.
+On Hugging Face, `PORT` is provided by the platform.
 
 ## API Routes
 
-### Auth
-- `POST /api/auth/register` — Register a new user
-- `POST /api/auth/login` — Login and get a token
-
-### URLs (require Bearer token)
+### URLs
 - `POST /api/shorten` — Shorten a URL
-- `GET /api/urls` — List your URLs
+- `GET /api/urls` — List all URLs
 - `DELETE /api/urls/<id>` — Delete a URL
 - `GET /api/urls/<id>/stats` — Get URL stats
 
