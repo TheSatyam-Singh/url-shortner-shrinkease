@@ -12,7 +12,7 @@ Install:
 
 ```bash
 cd backend
-python -m venv .venv     # optional but recommended
+python -m venv .venv     
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -21,7 +21,6 @@ Create local env file (copy example):
 
 ```bash
 cp .env.example .env
-# edit .env if you want to change SECRET_KEY, DB_PATH, BASE_URL, etc.
 ```
 
 Run:
