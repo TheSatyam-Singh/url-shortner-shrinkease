@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { API_ENDPOINTS } from '../config/api'
 
-const API = '/api/auth'
+const API = API_ENDPOINTS.auth
 
 function Login({ onLogin }) {
   const [isRegister, setIsRegister] = useState(false)
